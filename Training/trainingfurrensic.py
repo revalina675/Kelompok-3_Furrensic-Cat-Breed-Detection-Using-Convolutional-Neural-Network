@@ -1,5 +1,3 @@
-### STEP 1: IMPORT LIBRARIES
-
 !pip install protobuf==3.20.3
 
 import numpy as np
@@ -18,7 +16,6 @@ from tensorflow.keras.optimizers import Adam
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import classification_report, confusion_matrix
 
-# Setting up the Path
 image_dir = '/kaggle/input/the-oxfordiiit-pet-dataset/images/images'
 CAT_BREEDS = [
     'Abyssinian', 'Bengal', 'Birman', 'Bombay', 'British_Shorthair',
@@ -26,7 +23,6 @@ CAT_BREEDS = [
     'Siamese', 'Sphynx'
 ]
 
-### STEP 2: DATA PREPARATION & CHECKING
 filenames = os.listdir(image_dir)
 categories = []
 valid_filenames = []
@@ -39,10 +35,8 @@ for filename in filenames:
 
 df = pd.DataFrame({'filename': valid_filenames, 'category': categories})
 
-# Splitting Data (80:20)
 train_df, validate_df = train_test_split(df, test_size=0.20, random_state=42, stratify=df['category'])
 
-# dataset detail
 print("\n" + "="*40)
 print("="*40)
 print(f"Total Initial Data        : {len(df)} images")
@@ -51,7 +45,6 @@ print(f"Validation Data (20%)     : {len(validate_df)} images")
 print(f"Number of Classes         : {len(CAT_BREEDS)} Breeds")
 print("Split Method               : Stratified Shuffle Split (balanced class distribution)")
 
-### STEP 3: PREPROCESSING & GENERATOR 
 train_datagen = ImageDataGenerator(
     preprocessing_function=preprocess_input,
     rotation_range=20,
@@ -66,7 +59,6 @@ train_datagen = ImageDataGenerator(
 
 validation_datagen = ImageDataGenerator(preprocessing_function=preprocess_input)
 
-# train & validation the generator
 train_generator = train_datagen.flow_from_dataframe(
     train_df, image_dir, x_col='filename', y_col='category',
     target_size=(224, 224), class_mode='categorical', batch_size=32
@@ -77,7 +69,6 @@ validation_generator = validation_datagen.flow_from_dataframe(
     target_size=(224, 224), class_mode='categorical', batch_size=32
 )
 
-### STEP 4: TRAINING PHASE 1 (FROZEN)
 base_model = ResNet50(weights='imagenet', include_top=False, input_shape=(224, 224, 3))
 base_model.trainable = False
 
@@ -100,7 +91,6 @@ history = model.fit(
     callbacks=[checkpoint, early_stop]
 )
 
-### STEP 5: TRAINING PHASE 2 (FINE TUNING)
 base_model.trainable = True
 fine_tune_at = 140
 for layer in base_model.layers[:fine_tune_at]:
@@ -116,7 +106,6 @@ history_fine = model.fit(
     callbacks=[checkpoint, early_stop]
 )
 
-### STEP 6: REPORT (OPTIONAL)
 best_model = tf.keras.models.load_model('model_terbaik_raw.keras')
 
 eval_datagen = ImageDataGenerator(preprocessing_function=preprocess_input)
